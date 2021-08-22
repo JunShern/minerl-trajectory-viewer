@@ -1,0 +1,5 @@
+minerl
+numpy
+opencv-python
+seaborn
+streamlit
