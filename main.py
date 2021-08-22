@@ -38,7 +38,6 @@ def run_app(data_dir):
             'Select a trajectory:',
             traj_names)
         chosen_path = data_dir / option
-        st.write(f"`{option}`")
 
         env_name = str(Path(chosen_path).parent.stem)
         stream_name = Path(chosen_path).stem
@@ -48,33 +47,33 @@ def run_app(data_dir):
         # st.write("## Playback")
         # st.image(str(Path(chosen_path) / "recording.mp4"))
 
-        # Frame-by-frame analysis
-        st.write("## Frame-by-frame analysis")
+        # Select current frame
         max_frame = len(data_frames) - 1
         frame_idx = st.slider("Select frame:", 0, max_frame, 0)
         current_frame = data_frames[frame_idx]
 
-        img = current_frame[0]["pov"]
-        st.image(img, width=300)
+        state, action, reward, next_state, done, meta = current_frame
 
-    meta = current_frame[-1]
+        st.image(state["pov"], width=300, caption="State POV")
+        # st.image(next_state["pov"], width=300, caption="Next state POV")
+
     with col2:
+        st.write("### Actions")
+        st.write(action)
+        st.write("### Reward")
+        st.write(f"`{reward}`")
+        st.write("### Done")
+        st.write(done)
         st.write("### Metadata")
         st.write(meta)
-        st.write("### Actions")
-        st.write(current_frame[1])
-        st.write("### Episode Reward")
-        st.metric("Reward", float(current_frame[2]))
 
     with col3:
-        st.write("### Equipped")
-        st.write(current_frame[0]["equipped_items"])
+        st.write("### State")
+        st.write("#### Equipped")
+        st.write(state["equipped_items"])
 
-        st.write("### Inventory")
-        st.write(current_frame[0]["inventory"])
-
-        st.write("### Frame contents:")
-        st.write(current_frame)
+        st.write("#### Inventory")
+        st.write(state["inventory"])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Visualize MineRL trajectories')
