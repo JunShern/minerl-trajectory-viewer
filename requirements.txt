@@ -2,4 +2,5 @@ minerl
 numpy
 opencv-python
 seaborn
+plotly-express
 streamlit
