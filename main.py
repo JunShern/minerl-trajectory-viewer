@@ -28,17 +28,18 @@ def get_timeseries_reward(data_frames):
     return rewards
 
 def get_timeseries_actions(data_frames):
-    camera_null = "array([0., 0.], dtype=float32)"
-    equip_null = "none"
-    action_labels = sorted([key for key in data_frames[0][1].keys()]) # if key not in ["camera", "equip"]])
+    action_labels = sorted([key for key in data_frames[0][1].keys()])
     actions_timeseries_wide = []
     for key in action_labels:
-        if key == "camera":
-            actions_timeseries_wide.append([(0 if frame[1][key] == camera_null else 1) for frame in data_frames])
-        elif key == "equip":
-            actions_timeseries_wide.append([(0 if frame[1][key] == equip_null else 1) for frame in data_frames])
-        else:
+        action_sample = data_frames[0][1][key]
+        if type(action_sample) == np.ndarray:
+            actions_timeseries_wide.append([(1 if np.any(frame[1][key]) else 0) for frame in data_frames])
+        elif type(action_sample) == np.str_:
+            actions_timeseries_wide.append([(0 if frame[1][key] == "none" else 1) for frame in data_frames])
+        elif type(action_sample) == np.int64:
             actions_timeseries_wide.append([float(frame[1][key]) for frame in data_frames])
+        else:
+            raise Exception(f"Action type not supported! `{action_sample}` of type `{type(action_sample)}`")
     return np.array(actions_timeseries_wide), action_labels
 
 def run_app(data_dir):
@@ -62,16 +63,17 @@ def run_app(data_dir):
         stream_name = Path(chosen_path).stem
         data_frames = load_data(data_dir, env_name, stream_name)
 
+        # # Display GIF / video
+        # st.write("## Playback")
+        # st.write(str(Path(chosen_path) / "recording.mp4"))
+        # st.image(str(Path(chosen_path) / "recording.mp4"))
+
         # Select current frame
         max_frame = len(data_frames) - 1
         frame_idx = st.slider("Select frame:", 0, max_frame, 0)
         current_frame = data_frames[frame_idx]
 
         state, action, reward, next_state, done, meta = current_frame
-
-        # Display GIF / video
-        # st.write("## Playback")
-        # st.image(str(Path(chosen_path) / "recording.mp4"))
 
         # Aggregate plots
         st.write("### Actions over time")
@@ -109,22 +111,20 @@ def run_app(data_dir):
     with col3:
         st.write("### State")
         st.image(state["pov"], use_column_width=True, caption="Current State POV")
-
-        st.write("#### Equipped")
-        st.write(state["equipped_items"])
-
-        st.write("#### Inventory")
-        st.write(state["inventory"])
+        for key, val in state.items():
+            if key == "pov":
+                continue
+            st.write(f"#### {key}")
+            st.write(val)
 
     with col4:
         st.write("### Next State")
-        st.image(next_state["pov"], use_column_width=True, caption="Current State POV")
-
-        st.write("#### Equipped")
-        st.write(next_state["equipped_items"])
-
-        st.write("#### Inventory")
-        st.write(next_state["inventory"])
+        st.image(next_state["pov"], use_column_width=True, caption="Next State POV")
+        for key, val in next_state.items():
+            if key == "pov":
+                continue
+            st.write(f"#### {key}")
+            st.write(val)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Visualize MineRL trajectories')
